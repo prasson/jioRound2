@@ -17,6 +17,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.window import Window
 from pyspark.sql import types as t
 from pyspark.sql import functions as f
+
 conf = SparkConf()
 spark = SparkSession.builder.config(conf=conf).getOrCreate()
 
