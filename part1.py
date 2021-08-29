@@ -33,32 +33,33 @@ df_power = spark.read.format("csv").option("delimiter", "|").option("header", "t
 df_power_time = df_power.withColumn("time", f.to_timestamp(f.col("tmsInLong")/1000))
 df_fuel_time = df_fuel.withColumn("time", f.to_timestamp(f.col("tmsInLong")/1000))
 
-#power
+# power
 windowSpec = Window.partitionBy("asset_identifier").orderBy("time")
 df_power_lag = df_power_time.withColumn("lag_time_diff", f.lag("time", 1).over(windowSpec))
 #df_power_lag.show(truncate=False)
 
-#1.A - Generate the run time of the DG per session per day
+# 1.A - Generate the run time of the DG per session per day
 df_power_runtime_per_session = df_power_lag.withColumn("DG_runtime", f.col("time").cast("long") - f.col('lag_time_diff').cast("long")).\
     where(f.col("event") == 'OFF')
 #df_power_runtime_per_session.show(truncate=False)
 
-#1.B - Generate the run time of the DG per day
+# 1.B - Generate the run time of the DG per day
 df_power_runtime_per_day = df_power_runtime_per_session.groupBy("asset_identifier", "tmsdate").\
     agg(f.sum("DG_runtime").alias("DG_total_run_per_day"))
 #df_power_runtime_per_day.show(truncate=False)
 
-#fuel - Generate fuel consumed by the DG
+# fuel - Generate fuel consumed by the DG
 df_fuel_cast = df_fuel_time.withColumn("ltr", df_fuel_time["ltr"].cast(t.FloatType()))
 df_fuel_con_per_day = df_fuel_cast.groupBy("asset_identifier", "tmsdate").agg((f.max("ltr") - f.min("ltr")).alias("ltr_consumption"))
 
-#1.A - Calculate fuel consumption during every session through the day
+# 1.A - Calculate fuel consumption during every session through the day
 df_fuel_consumption_per_session_per_day = df_power_runtime_per_session.join(df_fuel_con_per_day,"asset_identifier", "INNER")
 df_fuel_consumption_per_session_per_day.select("asset_identifier", "type", "DG_runtime", "ltr_consumption").show(truncate=False)
 
-#1.B - Generate a Daily report for fuel consumption per hour on daily basis.
+# 1.B - Generate a Daily report for fuel consumption per hour on daily basis.
 df_fuel_consumption_total_per_day = df_power_runtime_per_day.join(df_fuel_con_per_day,"asset_identifier", "INNER")
-#df_fuel_consumption_total_per_day.show(truncate=False)
+
+# df_fuel_consumption_total_per_day.show(truncate=False)
 df_fuel_consumption_total_per_day_in_hr = df_fuel_consumption_total_per_day.\
     withColumn("DG_runtime_in_hr", df_fuel_consumption_total_per_day["DG_total_run_per_day"]/3600)
 df_fuel_consumption_total_per_day_in_hr.select("asset_identifier", df_fuel_con_per_day["tmsdate"],
