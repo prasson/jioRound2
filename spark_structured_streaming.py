@@ -6,7 +6,7 @@ from pyspark.sql.types import *
 conf = SparkConf()
 spark = SparkSession.builder.config(conf=conf).enableHiveSupport().getOrCreate()
 
-# streaming dataframe to read from topic(has key, value, timestamp, timestamp type columns)
+# streaming dataframe to read from topic(has key, value, timestamp, timestamp type columns .. etc)
 ds_app_stream_data = spark.readStream.format("kafka").option("kafka.bootstrap.servers", 'ip_address:port_number').\
     option("subscribe", "topic_name").option("startingOffsets", "latest").load()
 
