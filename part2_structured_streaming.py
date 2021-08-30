@@ -22,7 +22,8 @@ schema = StructType().\
 # Extract data(values) from json as per the specified schema
 df_app_data_with_schema = df_app_str_data.\
     select(from_json(col("value"), schema).alias("app_data"), "timestamp")
- 
+
+# dataframe to fetch device_id, tms, event, timestamp 
 df_app_data = df_app_data_with_schema.select("app_data.*", "timestamp")
 
 # write the dataframes to hdfs location in append mode
